@@ -18,32 +18,4 @@ npm install -g truffle
 
 On Windows, use [nmake](https://docs.microsoft.com/en-us/cpp/build/reference/nmake-reference?view=msvc-160&viewFallbackFrom=vs-2019) instead of `make`
 
-Build smart contracts:
-
-```
-make compile
-```
-
-Deploy smart contracts:
-
-```
-make deploy
-```
-
-Get a Truffle console:
-
-```
-make sh
-```
-
-Clear workspace:
-
-```
-make clear
-```
-
-Run tests:
-
-```
-npm test
-```
+Check out the `Makefile` for the most used commands
