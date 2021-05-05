@@ -1,24 +1,42 @@
-.PHONY: build deploy sh clear tests
+.PHONY: cbuild start stop restart sh logs compile deploy tsh tests
 
 # \
 !ifndef 0 # \
 delete=rmdir /Q /S # \
-!else
+cwd=%cd% \
+!else 
 delete=rm -rf
+cwd=$$(pwd)
 # \
 !endif
 
-compile:
-	truffle compile
+container=vaccineslot
 
-deploy:
-	truffle migrate --reset
+cbuild:
+	docker build -t $(container) .
+
+start:
+	docker run -d --rm --name $(container) --volume $(cwd):/usr/src/app $(container)
+
+stop:
+	docker stop $(container)
+
+restart: stop start
 
 sh:
-	truffle console
+	docker exec -it $(container) sh
 
-clear:
-	$(delete) build
+logs:
+	docker logs -f $(container)
+
+compile:
+	docker exec -it $(container) truffle compile
+
+deploy:
+	docker exec -it $(container) truffle migrate --reset
+
+tsh:
+	docker exec -it $(container) truffle console
 
 tests:
-	truffle test
+	docker exec -it $(container) truffle test
