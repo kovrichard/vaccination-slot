@@ -1,21 +1,16 @@
 # vaccination-slot
 
-## Setting up the environment
+## Requirements
 
-1. Install Truffle to handle smart contracts
+- [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
-```
-npm install -g truffle
-```
+## Environment
 
-2. Install [Ganache](https://www.trufflesuite.com/ganache) to run a local blockchain
-3. Create a Ganache workspace with **New Workspace**
-    - Add a workspace name
-    - Click on **Add project** and find your `truffle-config.js`
-    - Click **Save workspace**
+The development environment is inside the container. Edit the files outside, then build and deploy them with the help of the `Makefile`.
+Testing is also possible with it.
 
 ## Useful commands
 
-On Windows, use [nmake](https://docs.microsoft.com/en-us/cpp/build/reference/nmake-reference?view=msvc-160&viewFallbackFrom=vs-2019) instead of `make`
+On Windows, use [nmake](https://docs.microsoft.com/en-us/cpp/build/reference/nmake-reference?view=msvc-160&viewFallbackFrom=vs-2019) instead of `make`.
 
-Check out the `Makefile` for the most used commands
+Check out the `Makefile` for the most used commands.
