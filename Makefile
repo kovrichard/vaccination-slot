@@ -1,4 +1,4 @@
-.PHONY: cbuild start stop restart sh logs compile deploy tsh tests
+.PHONY: cbuild start stop restart sh logs compile deploy tsh tests addresses
 
 # \
 !ifndef 0 # \
@@ -50,3 +50,6 @@ tsh:
 # Run tests
 tests:
 	docker exec -it $(container) truffle test
+
+addresses:
+	docker exec -it $(container) truffle exec addresses.js
