@@ -21,7 +21,7 @@ On Windows, use [nmake](https://docs.microsoft.com/en-us/cpp/build/reference/nma
 Build smart contracts:
 
 ```
-make build
+make compile
 ```
 
 Deploy smart contracts:

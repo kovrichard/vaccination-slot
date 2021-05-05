@@ -8,11 +8,11 @@ delete=rm -rf
 # \
 !endif
 
-build:
+compile:
 	truffle compile
 
 deploy:
-	truffle migrate
+	truffle migrate --reset
 
 sh:
 	truffle console
