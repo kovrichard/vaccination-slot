@@ -34,8 +34,7 @@ jobs:
           ${{ runner.os }}-node-
     - run: npm i -g ganache-cli
     - run: ganache-cli &
-    - run: npm i -g truffle
-    - run: npm update
     - run: npm ci
+    - run: npm update
     - run: npm run build --if-present
     - run: npm test
