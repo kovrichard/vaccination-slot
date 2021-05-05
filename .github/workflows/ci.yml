@@ -28,7 +28,7 @@ jobs:
     - run: npm i -g truffle
     - run: npm i -g ganache-cli
     - run: npm update
-    - run: ganache-cli -q
+    - run: ganache-cli &
     - run: npm ci
     - run: npm run build --if-present
     - run: npm test
