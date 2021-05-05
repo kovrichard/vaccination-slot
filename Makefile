@@ -1,4 +1,4 @@
-.PHONY: build deploy sh clear
+.PHONY: build deploy sh clear tests
 
 # \
 !ifndef 0 # \
@@ -19,3 +19,6 @@ sh:
 
 clear:
 	$(delete) build
+
+tests:
+	truffle test

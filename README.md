@@ -30,14 +30,20 @@ Deploy smart contracts:
 make deploy
 ```
 
+Get a Truffle console:
+
+```
+make sh
+```
+
 Clear workspace:
 
 ```
 make clear
 ```
 
-Get a Truffle console:
+Run tests:
 
 ```
-make sh
+npm test
 ```
