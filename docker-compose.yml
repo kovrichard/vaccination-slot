@@ -1,0 +1,8 @@
+version: "3"
+services:
+  vaccineslot:
+    build: ./
+    image: vaccineslot
+    working_dir: /usr/src/app/vaccineslot
+    volumes:
+      - ./:/usr/src/app/vaccineslot

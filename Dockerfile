@@ -1,5 +1,12 @@
 FROM trufflesuite/ganache-cli
 
-WORKDIR /usr/src/app
+WORKDIR /usr/src/app/
 
-RUN npm i && npm update
+COPY package*.json ./
+
+ENV NODE_PATH=/usr/src/app/node_modules
+
+RUN npm i -g truffle
+RUN npm i && rm package*.json
+
+WORKDIR /usr/src/app/vaccineslot
