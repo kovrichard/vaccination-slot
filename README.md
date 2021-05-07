@@ -25,5 +25,6 @@ let addresses = await web3.eth.getAccounts()
 
 ```
 let contract = await VaccinationSlot.deployed()
-instance.getSlot()
+instance.getSlot(instance.getSlot({ from: '<address>' }))
+instance.issueSlot('<address2>', 'some text', { from: '<address>' })
 ```
