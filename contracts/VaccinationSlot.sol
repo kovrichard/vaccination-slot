@@ -14,22 +14,21 @@ contract VaccinationSlot {
     address owner;
     mapping(address => Slot) slots;
 
-
     constructor() public {
         owner = msg.sender;
     }
 
-
     function issueSlot(address receiver, uint slot, uint256 interval) public {
         require(msg.sender == owner, "Only the contract owner is able to issue slots");
         require(slots[receiver].issuedAt == 0, "Cannot issue new slot for address that already has one");
+        require(slot > 0, "Slot type must be greater, than zero");
 
         Slot memory tmp = Slot(getTime(), owner, slot, slot, 0, interval);
 
         slots[receiver] = tmp;
     }
 
-    function getTime () private view returns(uint256 time){
+    function getTime() private view returns(uint256 time){
         return block.timestamp;
     }
 
@@ -65,5 +64,20 @@ contract VaccinationSlot {
         slots[slotOwner].left = 0;
         slots[slotOwner].lastUsed = 0;
         slots[slotOwner].interval = 0;
+    }
+
+    function vaccinate(address patient) public {
+        Slot memory slot = slots[patient];
+
+        require(msg.sender == owner, "Only the contract owner is able to vaccinate");
+        require(slot.issuedAt != 0, "Patient must have a slot to get a vaccine");
+        require(slot.left > 0, "Slot must have a remaining piece");
+
+        slot.left--;
+        slot.lastUsed = getTime();
+
+        if (slot.left <= 0) {
+            burnSlot(patient);
+        }
     }
 }
