@@ -2,41 +2,68 @@
 pragma solidity >=0.4.22 <0.9.0;
 
 contract VaccinationSlot {
+    struct Slot {
+        uint256 issuedAt;
+        address issuer;
+        uint slotType;
+        uint left;
+        uint256 lastUsed;
+        uint256 interval;
+    }
+
     address owner;
-    mapping(address => string) slots;
+    mapping(address => Slot) slots;
+
 
     constructor() public {
         owner = msg.sender;
     }
 
-    function issueSlot(address receiver, string memory slot) public {
-        require(msg.sender == owner, "Only the contract owner is able to issue slots");
-        bytes memory emptyStringTest = bytes(slots[receiver]);
-        require(emptyStringTest.length == 0, "Cannot issue new slot for address that already has one");
 
-        slots[receiver] = slot;
+    function issueSlot(address receiver, uint slot, uint256 interval) public {
+        require(msg.sender == owner, "Only the contract owner is able to issue slots");
+        require(slots[receiver].issuedAt == 0, "Cannot issue new slot for address that already has one");
+
+        Slot memory tmp = Slot(getTime(), owner, slot, slot, 0, interval);
+
+        slots[receiver] = tmp;
     }
 
-    function getSlot() public view returns(string memory) {
-        return slots[msg.sender];
+    function getTime () private view returns(uint256 time){
+        return block.timestamp;
+    }
+
+    function getSlot() public view returns(uint256, address, uint, uint, uint256, uint256) {
+        Slot memory tmp = slots[msg.sender];
+        
+        return (
+            tmp.issuedAt,
+            tmp.issuer,
+            tmp.slotType,
+            tmp.left,
+            tmp.lastUsed,
+            tmp.interval
+        );
     }
 
     function transferSlot(address receiver) public {
-        bytes memory noSenderSlotTest = bytes(slots[msg.sender]);
-        require(noSenderSlotTest.length != 0, "Sender must have a valid slot to swap");
-        bytes memory noReceiverSlotTest = bytes(slots[receiver]);
-        require(noReceiverSlotTest.length != 0, "Receiver must have a valid slot to swap");
+        require(slots[msg.sender].issuedAt != 0, "Sender must have a valid slot to swap");
+        require(slots[receiver].issuedAt != 0, "Receiver must have a valid slot to swap");
 
-        string memory tmp = slots[msg.sender];
+        Slot memory tmp = slots[msg.sender];
         slots[msg.sender] = slots[receiver];
         slots[receiver] = tmp;
     }
 
     function burnSlot(address slotOwner) public {
         require(msg.sender == owner, "Only the contract owner is able to burn slots");
-        bytes memory noSlotTest = bytes(slots[slotOwner]);
-        require(noSlotTest.length != 0, "Owner must have a valid slot to burn");
+        require(slots[slotOwner].issuedAt != 0, "Owner must have a valid slot to burn");
 
-        slots[slotOwner] = "";
+        slots[slotOwner].issuedAt = 0;
+        slots[slotOwner].issuer = 0x0000000000000000000000000000000000000000;
+        slots[slotOwner].slotType = 0;
+        slots[slotOwner].left = 0;
+        slots[slotOwner].lastUsed = 0;
+        slots[slotOwner].interval = 0;
     }
 }
