@@ -12,11 +12,20 @@ contract VaccinationSlot {
         uint256 interval;
     }
 
+    struct Offer {
+        Slot from;
+        Slot to;
+    }
+
+    mapping(uint256 => Offer) offers;
+    uint256 offerId;
+
     address owner;
     mapping(address => Slot) slots;
 
     constructor() public {
         owner = msg.sender;
+        offerId = 0;
     }
 
     function issueSlot(address receiver, uint slot, uint256 interval) public {
@@ -47,16 +56,41 @@ contract VaccinationSlot {
         );
     }
 
-     
-    function transferSlot(address receiver) public {
+    function getOfferIDs() public view returns(uint[] memory) {
+        uint size = 0;
+
+        for (uint i = 0; i < offerId; i++) {
+            if (offers[i].to.slotOwner == msg.sender) {
+                size++;
+            }
+        }
+
+        uint[] memory ids = new uint[](size);
+        uint256 j = 0;
+
+        for (uint i = 0; i < offerId; i++) {
+            if (offers[i].to.slotOwner == msg.sender) {
+                ids[j++] = i;
+            }
+        }
+
+        return ids;
+    }
+
+    function getOfferById(uint256 id) public view returns(uint, address) {
+        require(offers[id].from.issuedAt != 0, "Offer must exist");
+
+        return (offers[id].from.slotType, offers[id].from.slotOwner);
+    }
+
+    function createOffer(address receiver) public {
         require(slots[msg.sender].issuedAt != 0, "Sender must have a valid slot to swap");
         require(slots[receiver].issuedAt != 0, "Receiver must have a valid slot to swap");
-        // left != slotType sender 
-        // left != slotType receiver
+        require(slots[msg.sender].lastUsed == 0, "Sender slot must be unused");
+        require(slots[receiver].lastUsed == 0, "Receiver slot must be unused");
 
-        Slot memory tmp = slots[msg.sender];
-        slots[msg.sender] = slots[receiver];
-        slots[receiver] = tmp;
+        offers[offerId] = Offer(slots[msg.sender], slots[receiver]);
+        offerId++;
     }
 
     function acceptTransfer(address receiver) public {
@@ -67,13 +101,7 @@ contract VaccinationSlot {
         require(msg.sender == owner, "Only the contract owner is able to burn slots");
         require(slots[slotOwner].issuedAt != 0, "Owner must have a valid slot to burn");
 
-        slots[slotOwner].issuedAt = 0;
-        slots[slotOwner].issuer = 0x0000000000000000000000000000000000000000;
-        slots[slotOwner].slotOwner = 0x0000000000000000000000000000000000000000;
-        slots[slotOwner].slotType = 0;
-        slots[slotOwner].left = 0;
-        slots[slotOwner].lastUsed = 0;
-        slots[slotOwner].interval = 0;
+        delete(slots[slotOwner]);
     }
 
     function vaccinate(address patient) public {

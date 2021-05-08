@@ -84,19 +84,76 @@ contract("VaccinationSlot", (accounts) => {
         assert.equal(interval, 0, "Empty slot should have interval zero");
     });
 
-    it("transfer is only possible if the sender has a valid slot", async () => {
+    it("address can query its offers' ids", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 3, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[3], 4, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[4], 5, 4);
+        await vaccinationSlotInstance.createOffer(accounts[3], { from: accounts[4] });
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[3] });
+
+        const offerIds = await vaccinationSlotInstance.getOfferIDs.call({ from: accounts[2] });
+
+
+        assert.equal(offerIds.length, 2, "Addresses should only see offers made for them");
+    });
+
+    it("address can query its offer by id", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 3, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+
+        const offerIds = await vaccinationSlotInstance.getOfferIDs.call({ from: accounts[2] });
+        const offerId = offerIds['0'].words[0];
+
+        const offer = await vaccinationSlotInstance.getOfferById.call(offerId, { from: accounts[2] });
+        const slotType = offer['0'].words[0];
+        const senderAddress = offer['1'];
+
+        assert.equal(slotType, 2, "Slot type is not correct");
+        assert.equal(senderAddress, accounts[1], "Slot type is not correct");
+    });
+
+    it("address cannot query not existing offer", async () => {
         assertLib.reverts(
-            vaccinationSlotInstance.transferSlot(accounts[1]),
+            vaccinationSlotInstance.getOfferById(0, { from: accounts[0] }),
+            "Offer must exist"
+        );
+    });
+
+    it("Offer cannot be created without a valid slot of the sender", async () => {
+        assertLib.reverts(
+            vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] }),
             "Sender must have a valid slot to swap"
         );
     });
 
-    it("transfer is only possible if the receiver has a valid slot", async () => {
-        await vaccinationSlotInstance.issueSlot(accounts[1], 1, 1);
-
+    it("Offer cannot be created without a valid slot of the receiver", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
         assertLib.reverts(
-            vaccinationSlotInstance.transferSlot(accounts[2], { from: accounts[1] }),
+            vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] }),
             "Receiver must have a valid slot to swap"
+        );
+    });
+
+    it("Offer cannot be created with a used slot of the sender", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 2, 4);
+        await vaccinationSlotInstance.vaccinate(accounts[1]);
+        assertLib.reverts(
+            vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] }),
+            "Sender slot must be unused"
+        );
+    });
+
+    it("Offer cannot be created with a used slot of the receiver", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 2, 4);
+        await vaccinationSlotInstance.vaccinate(accounts[2]);
+        assertLib.reverts(
+            vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] }),
+            "Receiver slot must be unused"
         );
     });
 
