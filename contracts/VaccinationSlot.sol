@@ -5,6 +5,7 @@ contract VaccinationSlot {
     struct Slot {
         uint256 issuedAt;
         address issuer;
+        address slotOwner;
         uint slotType;
         uint left;
         uint256 lastUsed;
@@ -23,7 +24,7 @@ contract VaccinationSlot {
         require(slots[receiver].issuedAt == 0, "Cannot issue new slot for address that already has one");
         require(slot > 0, "Slot type must be greater, than zero");
 
-        Slot memory tmp = Slot(getTime(), owner, slot, slot, 0, interval);
+        Slot memory tmp = Slot(getTime(), owner, receiver, slot, slot, 0, interval);
 
         slots[receiver] = tmp;
     }
@@ -32,12 +33,13 @@ contract VaccinationSlot {
         return block.timestamp;
     }
 
-    function getSlot() public view returns(uint256, address, uint, uint, uint256, uint256) {
+    function getSlot() public view returns(uint256, address, address, uint, uint, uint256, uint256) {
         Slot memory tmp = slots[msg.sender];
         
         return (
             tmp.issuedAt,
             tmp.issuer,
+            tmp.slotOwner,
             tmp.slotType,
             tmp.left,
             tmp.lastUsed,
@@ -45,13 +47,20 @@ contract VaccinationSlot {
         );
     }
 
+     
     function transferSlot(address receiver) public {
         require(slots[msg.sender].issuedAt != 0, "Sender must have a valid slot to swap");
         require(slots[receiver].issuedAt != 0, "Receiver must have a valid slot to swap");
+        // left != slotType sender 
+        // left != slotType receiver
 
         Slot memory tmp = slots[msg.sender];
         slots[msg.sender] = slots[receiver];
         slots[receiver] = tmp;
+    }
+
+    function acceptTransfer(address receiver) public {
+
     }
 
     function burnSlot(address slotOwner) private {
@@ -60,6 +69,7 @@ contract VaccinationSlot {
 
         slots[slotOwner].issuedAt = 0;
         slots[slotOwner].issuer = 0x0000000000000000000000000000000000000000;
+        slots[slotOwner].slotOwner = 0x0000000000000000000000000000000000000000;
         slots[slotOwner].slotType = 0;
         slots[slotOwner].left = 0;
         slots[slotOwner].lastUsed = 0;
