@@ -70,4 +70,42 @@ contract("VaccinationSlot", (accounts) => {
         assert.equal(lastUsed, 0, "Empty slot should have last used date zero");
         assert.equal(interval, 0, "Empty slot should have interval zero");
     });
+
+    it("vaccination is only possible by the contract owner", async () => {
+        assertLib.reverts(vaccinationSlotInstance.vaccinate(accounts[1], { from: accounts[2] }));
+    });
+
+    it("vaccination is not possible without a slot", async () => {
+        assertLib.reverts(vaccinationSlotInstance.vaccinate(accounts[1]));
+    });
+
+    it("vaccination decreases number of pieces left from slot", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 3, 3);
+        await vaccinationSlotInstance.vaccinate(accounts[1]);
+
+        const slotOfUser = await vaccinationSlotInstance.getSlot.call({ from: accounts[1] });
+        const left = slotOfUser['3'].words[0];
+
+        assert.equal(left, 2, 'Vaccination should decrease number of pieces left from slot');
+    });
+
+    it("vaccination records current time", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 3, 3);
+        await vaccinationSlotInstance.vaccinate(accounts[1]);
+
+        const slotOfUser = await vaccinationSlotInstance.getSlot.call({ from: accounts[1] });
+        const lastUsed = slotOfUser['4'].words[0];
+
+        assert.isAbove(lastUsed, 0, 'Vaccination should record current time');
+    });
+
+    it("vaccination burns slot if there are no pieces left", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 1, 3);
+        await vaccinationSlotInstance.vaccinate(accounts[1]);
+
+        const slotOfUser = await vaccinationSlotInstance.getSlot.call({ from: accounts[1] });
+        const issuedAt = slotOfUser['0'].words[0];
+
+        assert.equal(issuedAt, 0, "Vaccination should burn slot that has no pieces left");
+    });
 });

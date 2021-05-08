@@ -54,7 +54,7 @@ contract VaccinationSlot {
         slots[receiver] = tmp;
     }
 
-    function burnSlot(address slotOwner) public {
+    function burnSlot(address slotOwner) private {
         require(msg.sender == owner, "Only the contract owner is able to burn slots");
         require(slots[slotOwner].issuedAt != 0, "Owner must have a valid slot to burn");
 
@@ -75,6 +75,7 @@ contract VaccinationSlot {
 
         slot.left--;
         slot.lastUsed = getTime();
+        slots[patient] = slot;
 
         if (slot.left <= 0) {
             burnSlot(patient);
