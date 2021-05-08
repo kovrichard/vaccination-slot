@@ -10,18 +10,27 @@ contract("VaccinationSlot", (accounts) => {
     });
 
     it("issuing is only possible by the contract owner", async () => {
-        await assertLib.reverts(vaccinationSlotInstance.issueSlot(accounts[2], 1, 1, { from: accounts[1]}));
+        await assertLib.reverts(vaccinationSlotInstance.issueSlot(
+            accounts[2], 1, 1, { from: accounts[1]}),
+            "Only the contract owner is able to issue slots"
+        );
     });
 
 
     it("contract owner can not issue new slot for user if one is already issued", async () => {
         await vaccinationSlotInstance.issueSlot(accounts[1], 1, 1);
         
-        await assertLib.reverts(vaccinationSlotInstance.issueSlot(accounts[1], 2, 2));
+        await assertLib.reverts(
+            vaccinationSlotInstance.issueSlot(accounts[1], 2, 2),
+            "Cannot issue new slot for address that already has one"    
+        );
     });
 
     it("contract owner can not issue with type less than or equal to zero", async () => {
-        await assertLib.reverts(vaccinationSlotInstance.issueSlot(accounts[1], 0, 1));
+        await assertLib.reverts(
+            vaccinationSlotInstance.issueSlot(accounts[1], 0, 1),
+            "Slot type must be greater, than zero"    
+        );
     })
 
     it("contract owner can issue slots", async () => {
@@ -71,12 +80,34 @@ contract("VaccinationSlot", (accounts) => {
         assert.equal(interval, 0, "Empty slot should have interval zero");
     });
 
+    it("transfer is only possible if the sender has a valid slot", async () => {
+        assertLib.reverts(
+            vaccinationSlotInstance.transferSlot(accounts[1]),
+            "Sender must have a valid slot to swap"
+        );
+    });
+
+    it("transfer is only possible if the receiver has a valid slot", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 1, 1);
+
+        assertLib.reverts(
+            vaccinationSlotInstance.transferSlot(accounts[2], { from: accounts[1] }),
+            "Receiver must have a valid slot to swap"
+        );
+    });
+
     it("vaccination is only possible by the contract owner", async () => {
-        assertLib.reverts(vaccinationSlotInstance.vaccinate(accounts[1], { from: accounts[2] }));
+        assertLib.reverts(
+            vaccinationSlotInstance.vaccinate(accounts[1], { from: accounts[2] }),
+            "Only the contract owner is able to vaccinate"    
+        );
     });
 
     it("vaccination is not possible without a slot", async () => {
-        assertLib.reverts(vaccinationSlotInstance.vaccinate(accounts[1]));
+        assertLib.reverts(
+            vaccinationSlotInstance.vaccinate(accounts[1]),
+            "Patient must have a slot to get a vaccine."
+        );
     });
 
     it("vaccination decreases number of pieces left from slot", async () => {
