@@ -95,8 +95,7 @@ contract VaccinationSlot {
     }
 
     function acceptOffer(uint256 id) public {
-        require(slots[offers[id].from].issuedAt != 0, "Sender must have a valid slot to swap");
-        require(slots[offers[id].to].issuedAt != 0, "Receiver must have a valid slot to swap");
+        require(offers[id].from != 0x0000000000000000000000000000000000000000, "Offer must exist");
         require(slots[offers[id].from].lastUsed == 0, "Sender slot must be unused");
         require(slots[offers[id].to].lastUsed == 0, "Receiver slot must be unused");
         require(msg.sender == slots[offers[id].to].slotOwner, "Only the receiver can accept an offer");
@@ -133,6 +132,12 @@ contract VaccinationSlot {
 
         if (slot.left <= 0) {
             burnSlot(patient);
+
+            for (uint i = 0; i < offerId; i++) {
+                if (offers[i].from == patient || offers[i].to == patient) {
+                    delete(offers[i]);
+                } 
+            }
         }
     }
 }

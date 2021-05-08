@@ -169,27 +169,10 @@ contract("VaccinationSlot", (accounts) => {
         );
     });
 
-    it("Offer cannot be accepted without a valid slot of the sender", async () => {
-        await vaccinationSlotInstance.issueSlot(accounts[1], 1, 4);
-        await vaccinationSlotInstance.issueSlot(accounts[2], 2, 4);
-        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
-        await vaccinationSlotInstance.vaccinate(accounts[1]);
-
+    it("Non existing offer cannot be accepted", async () => {
         assertLib.reverts(
             vaccinationSlotInstance.acceptOffer(0, { from: accounts[2] }),
-            "Sender must have a valid slot to swap"    
-        );
-    });
-
-    it("Offer cannot be accepted without a valid slot of the receiver", async () => {
-        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
-        await vaccinationSlotInstance.issueSlot(accounts[2], 1, 4);
-        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
-        await vaccinationSlotInstance.vaccinate(accounts[2]);
-
-        assertLib.reverts(
-            vaccinationSlotInstance.acceptOffer(0, { from: accounts[2] }),
-            "Receiver must have a valid slot to swap"    
+            "Offer must exist"    
         );
     });
 
@@ -297,5 +280,24 @@ contract("VaccinationSlot", (accounts) => {
         const issuedAt = slotOfUser['0'].words[0];
 
         assert.equal(issuedAt, 0, "Vaccination should burn slot that has no pieces left");
+    });
+
+    it("vaccination deletes offers that contain burned slots", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 1, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 3, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[3], 4, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+        await vaccinationSlotInstance.createOffer(accounts[1], { from: accounts[3] });
+        await vaccinationSlotInstance.vaccinate(accounts[1]);
+
+        assertLib.reverts(
+            vaccinationSlotInstance.getOfferById(0, { from: accounts[2] }),
+            "Offer must exist"
+        );
+
+        assertLib.reverts(
+            vaccinationSlotInstance.getOfferById(1, { from: accounts[1] }),
+            "Offer must exist"
+        );
     });
 });
