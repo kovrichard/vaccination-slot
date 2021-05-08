@@ -79,6 +79,7 @@ contract VaccinationSlot {
 
     function getOfferById(uint256 id) public view returns(uint, address) {
         require(slots[offers[id].from].issuedAt != 0, "Offer must exist");
+        require(offers[id].to == msg.sender, "Offer can only be queried by the receiver");
 
         return (slots[offers[id].from].slotType, slots[offers[id].from].slotOwner);
     }

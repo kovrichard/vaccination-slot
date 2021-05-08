@@ -16,7 +16,6 @@ contract("VaccinationSlot", (accounts) => {
         );
     });
 
-
     it("contract owner can not issue new slot for user if one is already issued", async () => {
         await vaccinationSlotInstance.issueSlot(accounts[1], 1, 1);
         
@@ -113,6 +112,19 @@ contract("VaccinationSlot", (accounts) => {
 
         assert.equal(slotType, 2, "Slot type is not correct");
         assert.equal(senderAddress, accounts[1], "Slot type is not correct");
+    });
+
+    it("offer cannot be queried if receiver is not the caller", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 3, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+        const offerIds = await vaccinationSlotInstance.getOfferIDs.call({ from: accounts[2] });
+        const offerId = offerIds['0'].words[0];
+
+        assertLib.reverts(
+            vaccinationSlotInstance.getOfferById.call(offerId, { from: accounts[3] }),
+            "Offer can only be queried by the receiver"
+        );
     });
 
     it("address cannot query not existing offer", async () => {
