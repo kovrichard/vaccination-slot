@@ -157,6 +157,92 @@ contract("VaccinationSlot", (accounts) => {
         );
     });
 
+    it("Offer cannot be accepted without a valid slot of the sender", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 1, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 2, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+        await vaccinationSlotInstance.vaccinate(accounts[1]);
+
+        assertLib.reverts(
+            vaccinationSlotInstance.acceptOffer(0, { from: accounts[2] }),
+            "Sender must have a valid slot to swap"    
+        );
+    });
+
+    it("Offer cannot be accepted without a valid slot of the receiver", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 1, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+        await vaccinationSlotInstance.vaccinate(accounts[2]);
+
+        assertLib.reverts(
+            vaccinationSlotInstance.acceptOffer(0, { from: accounts[2] }),
+            "Receiver must have a valid slot to swap"    
+        );
+    });
+
+    it("Offer cannot be accepted with a used slot of the sender", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 2, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+        await vaccinationSlotInstance.vaccinate(accounts[1]);
+
+        assertLib.reverts(
+            vaccinationSlotInstance.acceptOffer(0, { from: accounts[2] }),
+            "Sender slot must be unused"    
+        );
+    });
+
+    it("Offer cannot be accepted with a used slot of the receiver", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 2, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+        await vaccinationSlotInstance.vaccinate(accounts[2]);
+
+        assertLib.reverts(
+            vaccinationSlotInstance.acceptOffer(0, { from: accounts[2] }),
+            "Receiver slot must be unused"    
+        );
+    });
+
+    it("Other address than the receiver cannot accept offer", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 4, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+
+        assertLib.reverts(
+            vaccinationSlotInstance.acceptOffer(0, { from: accounts[3] }),
+            "Only the receiver can accept an offer"
+        );
+    });
+
+    it("Accepted offer swaps slots", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 4, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+        await vaccinationSlotInstance.acceptOffer(0, { from: accounts[2] });
+
+        const slotOfOne = await vaccinationSlotInstance.getSlot.call({ from: accounts[1] });
+        const slotOfTwo = await vaccinationSlotInstance.getSlot.call({ from: accounts[2] });
+        const type1 = slotOfOne['3'].words[0];
+        const type2 = slotOfTwo['3'].words[0];
+
+        assert.equal(type1, 4, "Address one should have slot of address two");
+        assert.equal(type2, 2, "Address two should have slot of address one");
+    });
+
+    it("Accepted offer is deleted", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 4, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+        await vaccinationSlotInstance.acceptOffer(0, { from: accounts[2] });
+
+        assertLib.reverts(
+            vaccinationSlotInstance.getOfferById(0, { from: accounts[2] }),
+            "Offer must exist"
+        );
+    });
+
     it("vaccination is only possible by the contract owner", async () => {
         assertLib.reverts(
             vaccinationSlotInstance.vaccinate(accounts[1], { from: accounts[2] }),

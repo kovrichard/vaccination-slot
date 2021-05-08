@@ -13,8 +13,8 @@ contract VaccinationSlot {
     }
 
     struct Offer {
-        Slot from;
-        Slot to;
+        address from;
+        address to;
     }
 
     mapping(uint256 => Offer) offers;
@@ -60,7 +60,7 @@ contract VaccinationSlot {
         uint size = 0;
 
         for (uint i = 0; i < offerId; i++) {
-            if (offers[i].to.slotOwner == msg.sender) {
+            if (slots[offers[i].to].slotOwner == msg.sender) {
                 size++;
             }
         }
@@ -69,7 +69,7 @@ contract VaccinationSlot {
         uint256 j = 0;
 
         for (uint i = 0; i < offerId; i++) {
-            if (offers[i].to.slotOwner == msg.sender) {
+            if (slots[offers[i].to].slotOwner == msg.sender) {
                 ids[j++] = i;
             }
         }
@@ -78,9 +78,9 @@ contract VaccinationSlot {
     }
 
     function getOfferById(uint256 id) public view returns(uint, address) {
-        require(offers[id].from.issuedAt != 0, "Offer must exist");
+        require(slots[offers[id].from].issuedAt != 0, "Offer must exist");
 
-        return (offers[id].from.slotType, offers[id].from.slotOwner);
+        return (slots[offers[id].from].slotType, slots[offers[id].from].slotOwner);
     }
 
     function createOffer(address receiver) public {
@@ -89,12 +89,27 @@ contract VaccinationSlot {
         require(slots[msg.sender].lastUsed == 0, "Sender slot must be unused");
         require(slots[receiver].lastUsed == 0, "Receiver slot must be unused");
 
-        offers[offerId] = Offer(slots[msg.sender], slots[receiver]);
+        offers[offerId] = Offer(msg.sender, receiver);
         offerId++;
     }
 
-    function acceptTransfer(address receiver) public {
+    function acceptOffer(uint256 id) public {
+        require(slots[offers[id].from].issuedAt != 0, "Sender must have a valid slot to swap");
+        require(slots[offers[id].to].issuedAt != 0, "Receiver must have a valid slot to swap");
+        require(slots[offers[id].from].lastUsed == 0, "Sender slot must be unused");
+        require(slots[offers[id].to].lastUsed == 0, "Receiver slot must be unused");
+        require(msg.sender == slots[offers[id].to].slotOwner, "Only the receiver can accept an offer");
 
+        Offer memory offer = offers[id];
+
+        Slot memory tmp = slots[offer.from];
+        slots[offer.from] = slots[offer.to];
+        slots[offer.to] = tmp;
+
+        slots[offer.from].slotOwner = offer.from;
+        slots[offer.to].slotOwner = offer.to;
+
+        delete(offers[id]);
     }
 
     function burnSlot(address slotOwner) private {
