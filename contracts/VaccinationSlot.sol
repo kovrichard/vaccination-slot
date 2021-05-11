@@ -151,6 +151,11 @@ contract VaccinationSlot {
         slots[offer.to].slotOwner = offer.to;
 
         delete(offers[id]);
+        for (uint i = 0; i < offerId; i++) {
+            if (offers[i].from == msg.sender || offers[i].to == msg.sender) {
+                delete(offers[i]);
+            }
+        }
     }
 
     function burnSlot(address slotOwner) private {

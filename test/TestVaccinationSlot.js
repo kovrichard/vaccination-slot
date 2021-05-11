@@ -329,6 +329,34 @@ contract("VaccinationSlot", (accounts) => {
         );
     });
 
+    it("Offers targeting the acceptor are deleted", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 4, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[3], 4, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[3] });
+        await vaccinationSlotInstance.acceptOffer(0, { from: accounts[2] });
+
+        assertLib.reverts(
+            vaccinationSlotInstance.getOfferById(1, { from: accounts[2] }),
+            "Offer must exist"
+        );
+    });
+
+    it("Offers by the acceptor are deleted", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 4, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[3], 4, 4);
+        await vaccinationSlotInstance.createOffer(accounts[1], { from: accounts[2] });
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[3] });
+        await vaccinationSlotInstance.acceptOffer(1, { from: accounts[2] });
+
+        assertLib.reverts(
+            vaccinationSlotInstance.getOfferById(0, { from: accounts[1] }),
+            "Offer must exist"
+        );
+    });
+
     it("vaccination is only possible by the contract owner", async () => {
         assertLib.reverts(
             vaccinationSlotInstance.vaccinate(accounts[1], { from: accounts[2] }),
