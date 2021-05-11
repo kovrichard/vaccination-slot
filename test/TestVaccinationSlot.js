@@ -169,6 +169,17 @@ contract("VaccinationSlot", (accounts) => {
         );
     });
 
+    it("Offer cannot be created with the sender having an active offer", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 2, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+
+        assertLib.reverts(
+            vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] }),
+            "Sender already made and offer"
+        );
+    });
+
     it("Non existing offer cannot be accepted", async () => {
         assertLib.reverts(
             vaccinationSlotInstance.acceptOffer(0, { from: accounts[2] }),

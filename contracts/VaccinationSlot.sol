@@ -89,6 +89,13 @@ contract VaccinationSlot {
         require(slots[receiver].issuedAt != 0, "Receiver must have a valid slot to swap");
         require(slots[msg.sender].lastUsed == 0, "Sender slot must be unused");
         require(slots[receiver].lastUsed == 0, "Receiver slot must be unused");
+        bool madeOffer = false;
+        for (uint i = 0; i < offerId; i++) {
+            if (offers[i].from == msg.sender) {
+                madeOffer = true;
+            }
+        }
+        require(!madeOffer, "Sender already made and offer");
 
         offers[offerId] = Offer(msg.sender, receiver);
         offerId++;
@@ -133,20 +140,12 @@ contract VaccinationSlot {
         if (slot.left <= 0) {
             burnSlot(patient);
             
-            int id = userHasOffer(patient);
-
-            if (0 <= id) {
-                delete(offers[uint(id)]);
+            for (uint i = 0; i < offerId; i++) {
+                if (offers[i].from == patient || offers[i].to == patient) {
+                    delete(offers[i]);
+                }
             }
         }
     }
 
-    function userHasOffer(address user) private view returns(int) {
-        for (uint i = 0; i < offerId; i++) {
-            if (offers[i].from == user || offers[i].to == user) {
-                return int(i);
-            }
-        }
-        return -1;
-    }
 }
