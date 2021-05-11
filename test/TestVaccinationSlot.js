@@ -231,6 +231,35 @@ contract("VaccinationSlot", (accounts) => {
         );
     });
 
+    it("Offer can only be deleted by the sender", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 2, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+
+        const offerIds = await vaccinationSlotInstance.getCreatedOfferIDs.call({ from: accounts[1] });
+        const offerId = offerIds['0'].words[0];
+
+        assertLib.reverts(
+            vaccinationSlotInstance.deleteOffer.call(offerId, { from: accounts[3] }),
+            "Only the sender can delete an offer"
+        );
+    });
+
+    it("Sender can delete offer", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 2, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+
+        const offerIds = await vaccinationSlotInstance.getCreatedOfferIDs.call({ from: accounts[1] });
+        const offerId = offerIds['0'].words[0];
+
+        await vaccinationSlotInstance.deleteOffer(offerId, { from: accounts[1] });
+        assertLib.reverts(
+            vaccinationSlotInstance.getCreatedOfferById.call(offerId, { from: accounts[1] }),
+            "Offer must exist"    
+        );
+    });
+
     it("Non existing offer cannot be accepted", async () => {
         assertLib.reverts(
             vaccinationSlotInstance.acceptOffer(0, { from: accounts[2] }),

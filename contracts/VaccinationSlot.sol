@@ -129,8 +129,10 @@ contract VaccinationSlot {
         offerId++;
     }
 
-    function deleteOffer(uint id) public {
+    function deleteOffer(uint256 id) public {
+        require(offers[id].from == msg.sender, "Only the sender can delete an offer");
 
+        delete(offers[id]);
     }
 
     function acceptOffer(uint256 id) public {
