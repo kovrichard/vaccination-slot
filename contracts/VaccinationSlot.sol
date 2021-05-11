@@ -132,12 +132,21 @@ contract VaccinationSlot {
 
         if (slot.left <= 0) {
             burnSlot(patient);
+            
+            int id = userHasOffer(patient);
 
-            for (uint i = 0; i < offerId; i++) {
-                if (offers[i].from == patient || offers[i].to == patient) {
-                    delete(offers[i]);
-                } 
+            if (0 <= id) {
+                delete(offers[uint(id)]);
             }
         }
+    }
+
+    function userHasOffer(address user) private view returns(int) {
+        for (uint i = 0; i < offerId; i++) {
+            if (offers[i].from == user || offers[i].to == user) {
+                return int(i);
+            }
+        }
+        return -1;
     }
 }
