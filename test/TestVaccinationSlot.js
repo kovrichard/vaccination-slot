@@ -83,7 +83,7 @@ contract("VaccinationSlot", (accounts) => {
         assert.equal(interval, 0, "Empty slot should have interval zero");
     });
 
-    it("address can query its offers' ids", async () => {
+    it("receiver can query its offers' ids", async () => {
         await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
         await vaccinationSlotInstance.issueSlot(accounts[2], 3, 4);
         await vaccinationSlotInstance.issueSlot(accounts[3], 4, 4);
@@ -98,7 +98,7 @@ contract("VaccinationSlot", (accounts) => {
         assert.equal(offerIds.length, 2, "Addresses should only see offers made for them");
     });
 
-    it("address can query its offer by id", async () => {
+    it("receiver can query its offer by id", async () => {
         await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
         await vaccinationSlotInstance.issueSlot(accounts[2], 3, 4);
         await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
@@ -127,9 +127,60 @@ contract("VaccinationSlot", (accounts) => {
         );
     });
 
-    it("address cannot query not existing offer", async () => {
+    it("receiver cannot query not existing offer", async () => {
         assertLib.reverts(
             vaccinationSlotInstance.getOfferById(0, { from: accounts[0] }),
+            "Offer must exist"
+        );
+    });
+
+    it("sender can query its offers' ids", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 3, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[3], 4, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[4], 5, 4);
+        await vaccinationSlotInstance.createOffer(accounts[3], { from: accounts[4] });
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[3] });
+
+        const offerIds = await vaccinationSlotInstance.getCreatedOfferIDs.call({ from: accounts[1] });
+
+
+        assert.equal(offerIds.length, 1, "Addresses should only see offers made for them");
+    });
+
+    it("sender can query its offer by id", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 3, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+
+        const offerIds = await vaccinationSlotInstance.getCreatedOfferIDs.call({ from: accounts[1] });
+        const offerId = offerIds['0'].words[0];
+
+        const offer = await vaccinationSlotInstance.getCreatedOfferById.call(offerId, { from: accounts[1] });
+        const slotType = offer['0'].words[0];
+        const receiverAddress = offer['1'];
+
+        assert.equal(slotType, 3, "Slot type is not correct");
+        assert.equal(receiverAddress, accounts[2], "Slot type is not correct");
+    });
+
+    it("offer cannot be queried if sender is not the caller", async () => {
+        await vaccinationSlotInstance.issueSlot(accounts[1], 2, 4);
+        await vaccinationSlotInstance.issueSlot(accounts[2], 3, 4);
+        await vaccinationSlotInstance.createOffer(accounts[2], { from: accounts[1] });
+        const offerIds = await vaccinationSlotInstance.getCreatedOfferIDs.call({ from: accounts[1] });
+        const offerId = offerIds['0'].words[0];
+
+        assertLib.reverts(
+            vaccinationSlotInstance.getCreatedOfferById.call(offerId, { from: accounts[3] }),
+            "Offer can only be queried by the sender"
+        );
+    });
+
+    it("sender cannot query not existing offer", async () => {
+        assertLib.reverts(
+            vaccinationSlotInstance.getCreatedOfferById(0, { from: accounts[0] }),
             "Offer must exist"
         );
     });

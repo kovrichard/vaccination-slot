@@ -77,11 +77,39 @@ contract VaccinationSlot {
         return ids;
     }
 
+    function getCreatedOfferIDs() public view returns(uint[] memory) {
+        uint size = 0;
+
+        for (uint i = 0; i < offerId; i++) {
+            if (slots[offers[i].from].slotOwner == msg.sender) {
+                size++;
+            }
+        }
+
+        uint[] memory ids = new uint[](size);
+        uint256 j = 0;
+
+        for (uint i = 0; i < offerId; i++) {
+            if (slots[offers[i].from].slotOwner == msg.sender) {
+                ids[j++] = i;
+            }
+        }
+
+        return ids;
+    }
+
     function getOfferById(uint256 id) public view returns(uint, address) {
         require(slots[offers[id].from].issuedAt != 0, "Offer must exist");
         require(offers[id].to == msg.sender, "Offer can only be queried by the receiver");
 
-        return (slots[offers[id].from].slotType, slots[offers[id].from].slotOwner);
+        return (slots[offers[id].from].slotType, offers[id].from);
+    }
+
+    function getCreatedOfferById(uint256 id) public view returns(uint, address) {
+        require(slots[offers[id].from].issuedAt != 0, "Offer must exist");
+        require(offers[id].from == msg.sender, "Offer can only be queried by the sender");
+
+        return (slots[offers[id].to].slotType, offers[id].to);
     }
 
     function createOffer(address receiver) public {
@@ -99,6 +127,10 @@ contract VaccinationSlot {
 
         offers[offerId] = Offer(msg.sender, receiver);
         offerId++;
+    }
+
+    function deleteOffer(uint id) public {
+
     }
 
     function acceptOffer(uint256 id) public {
